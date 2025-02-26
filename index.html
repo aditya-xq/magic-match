@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quantum Memory Match</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Animated gradient background for a magical feel */
+    body {
+      background: linear-gradient(135deg, #2e026d, #15162c);
+      background-size: 400% 400%;
+      animation: gradientAnimation 15s ease infinite;
+    }
+    @keyframes gradientAnimation {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    /* Card hover animation */
+    .card {
+      transition: transform 0.2s ease-in-out;
+    }
+    .card:hover {
+      transform: scale(1.05);
+    }
+    /* Magical sparkle animation */
+    @keyframes sparkle {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+    }
+    .magical {
+      animation: sparkle 1s ease-in-out;
+    }
+  </style>
+</head>
+<body class="text-white font-sans relative">
+  <!-- Home Menu -->
+  <div id="menu" class="min-h-screen flex flex-col justify-center items-center px-4">
+    <h1 class="text-5xl font-extrabold mb-6 text-center">Quantum Memory Match</h1>
+    <p class="mb-8 text-lg text-gray-300 text-center max-w-lg">
+      Welcome to a magical twist on the classic memory match game. Uncover hidden pairs, harness quantum magic, and let the mystic forces guide you to victory!
+    </p>
+    <div class="space-x-4">
+      <button id="startGame" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded shadow">
+        Start Game
+      </button>
+      <button id="rulesButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-6 rounded shadow">
+        Game Rules
+      </button>
+    </div>
+  </div>
+
+  <!-- Game Rules Modal -->
+  <div id="rules" class="hidden fixed inset-0 bg-gray-800 bg-opacity-90 flex justify-center items-center z-50 px-4">
+    <div class="bg-gray-700 p-6 rounded-lg max-w-md w-full">
+      <h2 class="text-3xl font-bold mb-4 text-center">Game Rules</h2>
+      <ul class="list-disc pl-5 space-y-2 text-lg">
+        <li>Click a card to reveal its magical symbol.</li>
+        <li>Reveal two cards at a time. Matching pairs remain open and reward you with bonus points.</li>
+        <li>If they don't match, they will be concealed again. Try to remember their positions!</li>
+        <li>Fewer moves and quicker matches increase your score.</li>
+        <li>Use Quantum Flux once per game to magically reveal two random cards.</li>
+        <li>Sometimes, fate intervenes: a rare magical match can double your bonus points!</li>
+        <li>Uncover all pairs to collapse the quantum realm and win the game.</li>
+      </ul>
+      <div class="mt-6 flex justify-center space-x-4">
+        <button id="closeRules" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+          Close
+        </button>
+        <button id="rulesHome" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+          Home
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Container -->
+  <div id="gameContainer" class="hidden flex flex-col items-center justify-center min-h-screen px-4">
+    <div class="w-full flex flex-col sm:flex-row justify-between items-center p-4 max-w-4xl">
+      <div class="text-xl mb-2 sm:mb-0">Moves: <span id="moves">0</span></div>
+      <div class="text-xl mb-2 sm:mb-0">Score: <span id="score">0</span></div>
+      <div class="text-xl mb-2 sm:mb-0">Time: <span id="timeElapsed">0</span> sec</div>
+      <div class="space-x-4">
+        <button id="resetGame" class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded shadow">
+          Reset
+        </button>
+        <button id="fluxButton" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded shadow">
+          Activate Quantum Flux
+        </button>
+        <button id="homeButton" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow">
+          Home
+        </button>
+      </div>
+    </div>
+    <div id="gameBoard" class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 max-w-4xl w-full"></div>
+  </div>
+
+  <!-- Game End Screen -->
+  <div id="gameEnd" class="hidden flex flex-col justify-center items-center min-h-screen px-4">
+    <div class="bg-gray-800 p-8 rounded-lg shadow-lg text-center max-w-md w-full">
+      <h2 class="text-4xl font-bold mb-4">Game Over</h2>
+      <p id="finalScore" class="text-2xl mb-2"></p>
+      <p id="finalTime" class="text-2xl mb-2"></p>
+      <p id="finalMoves" class="text-2xl mb-4"></p>
+      <h3 class="text-3xl font-bold mb-2">High Scores</h3>
+      <div id="highScores" class="mb-4 text-left max-h-64 overflow-y-auto"></div>
+      <div class="space-x-4">
+        <button id="restartGame" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded shadow">
+          Restart Game
+        </button>
+        <button id="homeEndButton" class="bg-red-500 hover:bg-red-700 text-white font-bold py-3 px-6 rounded shadow">
+          Home
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Quantum-themed symbols as game assets.
+    const emojis = ['⚛️', '🧪', '🔬', '🪐', '🌌', '☢️', '💥', '🧬'];
+    let gameSymbols = [];
+    let moves = 0;
+    let score = 0;
+    let firstCard = null;
+    let secondCard = null;
+    let lockBoard = false;
+    let quantumFluxUsed = false;
+    let streak = 0;
+    let startTime = null;
+    let timerInterval = null;
+
+    // Initialize game: reset variables, timer, and build the board.
+    function initGame() {
+      moves = 0;
+      score = 0;
+      streak = 0;
+      firstCard = null;
+      secondCard = null;
+      lockBoard = false;
+      quantumFluxUsed = false;
+      document.getElementById('moves').innerText = moves;
+      document.getElementById('score').innerText = score;
+      document.getElementById('fluxButton').disabled = false;
+      document.getElementById('fluxButton').classList.remove('opacity-50', 'cursor-not-allowed');
+      
+      // Reset and start timer.
+      clearInterval(timerInterval);
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById('timeElapsed').innerText = elapsed;
+      }, 1000);
+      
+      // Duplicate and shuffle the emojis.
+      gameSymbols = [...emojis, ...emojis];
+      shuffle(gameSymbols);
+      
+      // Build the game board.
+      const board = document.getElementById('gameBoard');
+      board.innerHTML = '';
+      gameSymbols.forEach((symbol, index) => {
+        const card = document.createElement('div');
+        card.classList.add('card', 'bg-gray-800', 'flex', 'justify-center', 'items-center', 'text-5xl', 'cursor-pointer', 'rounded', 'shadow-lg');
+        card.style.height = '100px';
+        card.dataset.symbol = symbol;
+        card.dataset.index = index;
+        card.innerText = '❓';
+        card.addEventListener('click', flipCard);
+        board.appendChild(card);
+      });
+    }
+
+    // Fisher-Yates shuffle algorithm.
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    // Handle card flip.
+    function flipCard() {
+      if (lockBoard) return;
+      if (this.innerText !== '❓') return; // Already revealed.
+      
+      // Reveal the card.
+      this.innerText = this.dataset.symbol;
+      this.classList.add('bg-blue-500', 'transition', 'duration-500');
+      
+      if (!firstCard) {
+        firstCard = this;
+        return;
+      }
+      secondCard = this;
+      lockBoard = true;
+      moves++;
+      document.getElementById('moves').innerText = moves;
+      checkForMatch();
+    }
+
+    // Check if two flipped cards match.
+    function checkForMatch() {
+      if (firstCard.dataset.symbol === secondCard.dataset.symbol) {
+        streak++;
+        let baseBonus = firstCard.dataset.flux ? 20 : 10;
+        let bonusPoints = baseBonus + (streak - 1) * 5;
+        // 10% chance for a magical match that doubles the bonus.
+        if (Math.random() < 0.1) {
+          bonusPoints *= 2;
+          firstCard.classList.add('magical');
+          secondCard.classList.add('magical');
+          setTimeout(() => {
+            firstCard.classList.remove('magical');
+            secondCard.classList.remove('magical');
+          }, 1000);
+        }
+        score += bonusPoints;
+        document.getElementById('score').innerText = score;
+        resetTurn();
+        checkGameCompletion();
+      } else {
+        streak = 0;
+        setTimeout(() => {
+          firstCard.innerText = '❓';
+          secondCard.innerText = '❓';
+          firstCard.classList.remove('bg-blue-500');
+          secondCard.classList.remove('bg-blue-500');
+          resetTurn();
+        }, 1000);
+      }
+    }
+
+    // Reset card turn.
+    function resetTurn() {
+      [firstCard, secondCard] = [null, null];
+      lockBoard = false;
+    }
+
+    // Check if the game is complete.
+    function checkGameCompletion() {
+      const allCards = document.querySelectorAll('.card');
+      const unrevealedCards = Array.from(allCards).filter(card => card.innerText === '❓');
+      if (unrevealedCards.length === 0) {
+        clearInterval(timerInterval);
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        setTimeout(() => {
+          displayGameEndScreen(elapsed);
+        }, 500);
+      }
+    }
+
+    // Activate Quantum Flux: reveal two random unrevealed cards.
+    function activateQuantumFlux() {
+      if (lockBoard || firstCard || secondCard) return;
+      if (quantumFluxUsed) return;
+      quantumFluxUsed = true;
+      const fluxBtn = document.getElementById('fluxButton');
+      fluxBtn.disabled = true;
+      fluxBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      
+      const allCards = Array.from(document.querySelectorAll('.card'));
+      const unrevealedCards = allCards.filter(card => card.innerText === '❓');
+      if (unrevealedCards.length < 2) return;
+      
+      const indices = [];
+      while (indices.length < 2) {
+        let randIndex = Math.floor(Math.random() * unrevealedCards.length);
+        if (!indices.includes(randIndex)) indices.push(randIndex);
+      }
+      const card1 = unrevealedCards[indices[0]];
+      const card2 = unrevealedCards[indices[1]];
+      
+      card1.dataset.flux = true;
+      card2.dataset.flux = true;
+      
+      card1.innerText = card1.dataset.symbol;
+      card2.innerText = card2.dataset.symbol;
+      card1.classList.add('bg-blue-500');
+      card2.classList.add('bg-blue-500');
+      
+      moves++;
+      document.getElementById('moves').innerText = moves;
+      
+      if (card1.dataset.symbol === card2.dataset.symbol) {
+        streak++;
+        let bonusPoints = 20 + (streak - 1) * 5;
+        if (Math.random() < 0.1) {
+          bonusPoints *= 2;
+          card1.classList.add('magical');
+          card2.classList.add('magical');
+          setTimeout(() => {
+            card1.classList.remove('magical');
+            card2.classList.remove('magical');
+          }, 1000);
+        }
+        score += bonusPoints;
+        document.getElementById('score').innerText = score;
+      } else {
+        streak = 0;
+        setTimeout(() => {
+          card1.innerText = '❓';
+          card2.innerText = '❓';
+          card1.classList.remove('bg-blue-500');
+          card2.classList.remove('bg-blue-500');
+          score = Math.max(score - 5, 0);
+          document.getElementById('score').innerText = score;
+          delete card1.dataset.flux;
+          delete card2.dataset.flux;
+        }, 1500);
+      }
+      checkGameCompletion();
+    }
+
+    // Update and display high scores using localStorage.
+    function updateHighScores(finalScore, finalMoves, finalTime) {
+      const highScoreKey = 'quantumMemoryHighScores';
+      let scores = JSON.parse(localStorage.getItem(highScoreKey)) || [];
+      const currentScore = {
+        score: finalScore,
+        moves: finalMoves,
+        time: finalTime,
+        date: new Date().toLocaleString()
+      };
+      scores.push(currentScore);
+      scores.sort((a, b) => {
+        if (b.score === a.score) return a.time - b.time;
+        return b.score - a.score;
+      });
+      scores = scores.slice(0, 10);
+      localStorage.setItem(highScoreKey, JSON.stringify(scores));
+      return scores;
+    }
+
+    // Display the game end screen with final stats and high scores.
+    function displayGameEndScreen(elapsed) {
+      document.getElementById('gameContainer').classList.add('hidden');
+      document.getElementById('gameEnd').classList.remove('hidden');
+      
+      document.getElementById('finalScore').innerText = "Final Score: " + score;
+      document.getElementById('finalTime').innerText = "Time Taken: " + elapsed + " sec";
+      document.getElementById('finalMoves').innerText = "Total Moves: " + moves;
+      
+      const scores = updateHighScores(score, moves, elapsed);
+      const highScoresDiv = document.getElementById('highScores');
+      highScoresDiv.innerHTML = "";
+      scores.forEach((entry, index) => {
+        const entryDiv = document.createElement('div');
+        entryDiv.className = "py-1 border-b border-gray-600";
+        entryDiv.innerText = `${index + 1}. Score: ${entry.score} | Moves: ${entry.moves} | Time: ${entry.time} sec | ${entry.date}`;
+        highScoresDiv.appendChild(entryDiv);
+      });
+    }
+
+    // Go back to the home screen.
+    function goHome() {
+      clearInterval(timerInterval);
+      document.getElementById('gameContainer').classList.add('hidden');
+      document.getElementById('gameEnd').classList.add('hidden');
+      document.getElementById('menu').classList.remove('hidden');
+    }
+
+    // Event listeners.
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('startGame').addEventListener('click', () => {
+        document.getElementById('menu').classList.add('hidden');
+        document.getElementById('gameContainer').classList.remove('hidden');
+        initGame();
+      });
+      
+      document.getElementById('rulesButton').addEventListener('click', () => {
+        document.getElementById('rules').classList.remove('hidden');
+      });
+      
+      document.getElementById('closeRules').addEventListener('click', () => {
+        document.getElementById('rules').classList.add('hidden');
+      });
+      
+      document.getElementById('rulesHome').addEventListener('click', goHome);
+      
+      document.getElementById('resetGame').addEventListener('click', initGame);
+      
+      document.getElementById('fluxButton').addEventListener('click', activateQuantumFlux);
+      
+      document.getElementById('homeButton').addEventListener('click', goHome);
+      
+      document.getElementById('restartGame').addEventListener('click', () => {
+        document.getElementById('gameEnd').classList.add('hidden');
+        document.getElementById('gameContainer').classList.remove('hidden');
+        initGame();
+      });
+      
+      document.getElementById('homeEndButton').addEventListener('click', goHome);
+    });
+  </script>
+</body>
+</html>
